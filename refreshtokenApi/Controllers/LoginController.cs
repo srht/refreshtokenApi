@@ -40,13 +40,29 @@ namespace refreshtokenApi.Controllers
             if (signInResult.Succeeded)
             {
                 var user=await UserManager.FindByEmailAsync(model.Username);
-                var tokenData= TokenHelper.GenerateToken(user, Configuration);
+                var roles= await UserManager.GetRolesAsync(user);
+                string userRole = roles.Any() ? roles[0] : Roles.Administrator.ToString();
+                var tokenData= TokenHelper.GenerateToken(user, userRole, Configuration);
+                string refreshToken = TokenHelper.CreateRefreshToken();
+                DateTime refreshTokenExpireDate = DateTime.Now.AddDays(7);
+                if(user.RefreshTokens==null)
+                user.RefreshTokens = new List<RefreshToken>();
+                user.RefreshTokens.Add(new RefreshToken
+                {
+                    Token = refreshToken,
+                    ExpireDate = refreshTokenExpireDate,
+                    Created = DateTime.Now,
+                    CreatedByIp = TokenHelper.ipAddress(Request, HttpContext)
+                });
+                tokenData.RefreshToken = refreshToken;
+                tokenData.RefreshTokenExpireDate = refreshTokenExpireDate;
+                await UserManager.UpdateAsync(user);
                 return Ok(new LoginReponseViewModel()
                 {
-                    Message = "Model boş.",
+                    Message = "Model var.",
                     StatusCode = 200,
                     Fullname =$"{user.Name} {user.Surname}",
-                    Role=Roles.User.ToString(),
+                    Role = roles.Any()?Enum.Parse<RoleView>(roles[0]):RoleView.Administrator,
                     TokenResponse=tokenData,
                     Username=user.UserName
                 });
@@ -59,6 +75,19 @@ namespace refreshtokenApi.Controllers
                     StatusCode = 404
                 });
             }
+        }
+
+        private void setTokenCookie(string token)
+        {
+            // append cookie with refresh token to the http response
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(7)
+            };
+
+            Response.Cookies.Append("refreshToken2", token, cookieOptions);
+            Response.Cookies.Append("refreshToken", token, cookieOptions);
         }
     }
 

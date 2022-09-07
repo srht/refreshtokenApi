@@ -9,6 +9,7 @@ namespace refreshtokenApi
         public AppDbContext(DbContextOptions options) : base(options)
         {
         }
+
     }
 
 }

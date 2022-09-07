@@ -4,7 +4,7 @@
     {
         public string Username { get; set; }
         public string Fullname { get; set; }
-        public string Role { get; set; }
+        public RoleView Role { get; set; }
         public TokenResponseViewModel TokenResponse { get; set; }
     }
 
@@ -14,5 +14,12 @@
         public DateTime AccessTokenExpireDate { get; set; }
         public string RefreshToken { get; set; }
         public DateTime RefreshTokenExpireDate { get; set; }
+    }
+
+    public enum RoleView
+    {
+        User,
+        Editor,
+        Administrator
     }
 }
